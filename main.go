@@ -100,6 +100,9 @@ func read(url, cluster string) {
 		if !strings.HasPrefix(line, "data:") {
 			continue
 		}
+		if strings.Contains(line, `{"type":"ping"}`) {
+			continue
+		}
 		report(cluster, line)
 	}
 	log.Warn("stream stop reporting")
