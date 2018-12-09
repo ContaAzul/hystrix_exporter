@@ -11,11 +11,22 @@ builds:
   - amd64
   env:
   - CGO_ENABLED=0
+checksum:
+  name_template: '{{ .ProjectName }}_checksums.txt'
 archive:
+  name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}'
   files:
   - config.yml
+changelog:
+  filters:
+    exclude:
+    - '^Merge (remote|branch|pull)'
 dockers:
 - image: caninjas/hystrix_exporter
-  latest: true
   extra_files:
   - config.yml
+  tag_templates:
+  - '{{ .Tag }}'
+  - 'v{{ .Major }}'
+  - 'v{{ .Major }}.{{ .Minor }}'
+  - latest

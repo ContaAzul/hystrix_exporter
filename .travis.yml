@@ -4,12 +4,15 @@ language: go
 go: 1.9
 services:
   - docker
-install:
-  - make setup
-  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
-script:
-  - make ci
+install: make setup
+script: make ci
 after_success:
-  - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash
+  - test -n "$TRAVIS_TAG" && docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
 notifications:
   email: false
+deploy:
+  - provider: script
+    skip_cleanup: true
+    script: curl -sL https://git.io/goreleaser | bash
+    on:
+      tags: true
