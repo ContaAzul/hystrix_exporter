@@ -4,7 +4,7 @@ language: go
 go: 1.9
 services:
   - docker
-install: make setup
+install: make setup install
 script: make ci
 after_success:
   - test -n "$TRAVIS_TAG" && docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
