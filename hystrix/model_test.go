@@ -21,3 +21,18 @@ func TestUnmarshal(t *testing.T) {
 		})
 	}
 }
+
+// SomeData is used to properly benchmark Unmarshal func.
+var SomeData Data
+
+func BenchmarkUnmarshal(b *testing.B) {
+	bytes, err := ioutil.ReadFile("testdata/command.json")
+	assert.NoError(b, err)
+
+	for i := 0; i < b.N; i++ {
+		var data Data
+		data, err := Unmarshal(string(bytes))
+		assert.NoError(b, err)
+		SomeData = data
+	}
+}
