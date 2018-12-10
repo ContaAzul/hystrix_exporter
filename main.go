@@ -96,11 +96,8 @@ func poll(url, cluster string) {
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			read(url, cluster)
-		}
+	for range ticker.C {
+		read(url, cluster)
 	}
 }
 
@@ -113,7 +110,11 @@ func read(url, cluster string) {
 		log.WithError(err).Warn("failed to read url")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err = resp.Body.Close(); err != nil {
+			log.WithError(err).Warn("close response body")
+		}
+	}()
 
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
