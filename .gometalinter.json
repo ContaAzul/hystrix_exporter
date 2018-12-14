@@ -1,0 +1,7 @@
+{
+    "Linters": {
+        "gosec": {
+            "Command": "gosec -fmt=csv -exclude=G107,G304"
+        }
+    }
+}

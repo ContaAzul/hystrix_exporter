@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"html/template"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"strings"
 	"time"
@@ -31,6 +32,7 @@ var (
 	configFile = app.Flag("config", "config file").Short('c').Default("config.yml").ExistingFile()
 	listenAddr = app.Flag("listen-addr", "address to listen to").Default(":9444").String()
 	debug      = app.Flag("debug", "show debug logs").Default("false").Bool()
+	profile    = app.Flag("pprof", "enable profiler").Default("false").Bool()
 )
 
 var indexTmpl = `
@@ -66,12 +68,19 @@ func main() {
 
 	metrics.MustRegister(prometheus.DefaultRegisterer)
 	for _, cluster := range conf.Clusters {
-		go read(cluster.URL, cluster.Name)
+		go poll(cluster.URL, cluster.Name)
 	}
 
 	var mux = http.NewServeMux()
 	var index = template.Must(template.New("index").Parse(indexTmpl))
 	mux.Handle("/metrics", promhttp.Handler())
+	if *profile {
+		mux.HandleFunc("/debug/pprof/", pprof.Index)
+		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if err := index.Execute(w, &conf); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -83,16 +92,30 @@ func main() {
 	}
 }
 
+func poll(url, cluster string) {
+	ticker := time.NewTicker(time.Second * 5)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		read(url, cluster)
+	}
+}
+
 func read(url, cluster string) {
 	var log = log.WithField("url", url).WithField("cluster", cluster)
 	log.Info("reading")
+
 	resp, err := http.Get(url)
 	if err != nil {
 		log.WithError(err).Warn("failed to read url")
-		time.Sleep(time.Second * 10)
-		read(url, cluster)
 		return
 	}
+	defer func() {
+		if err = resp.Body.Close(); err != nil {
+			log.WithError(err).Warn("close response body")
+		}
+	}()
+
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		log.Debug("new line")
@@ -105,9 +128,11 @@ func read(url, cluster string) {
 		}
 		report(cluster, line)
 	}
+	if err = scanner.Err(); err != nil {
+		log.Errorf("scanner error: %v", err)
+	}
+
 	log.Warn("stream stop reporting")
-	time.Sleep(time.Second * 5)
-	read(url, cluster)
 }
 
 func report(cluster, line string) {
