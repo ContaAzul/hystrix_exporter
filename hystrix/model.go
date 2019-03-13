@@ -34,12 +34,14 @@ type Data struct {
 	ReportingHosts float64 `json:"reportingHosts,omitempty"`
 
 	// Command properties
-	Group                string  `json:"group,omitempty"`
-	ThreadPool           string  `json:"threadPool,omitempty"`
-	IsCircuitBreakerOpen bool    `json:"isCircuitBreakerOpen,omitempty"`
-	ErrorPercentage      float64 `json:"errorPercentage,omitempty"`
-	ErrorCount           float64 `json:"errorCount,omitempty"`
-	RequestCount         float64 `json:"requestCount,omitempty"`
+	Group                              string  `json:"group,omitempty"`
+	ThreadPool                         string  `json:"threadPool,omitempty"`
+	IsCircuitBreakerOpen               bool    `json:"isCircuitBreakerOpen,omitempty"`
+	ErrorPercentage                    float64 `json:"errorPercentage,omitempty"`
+	ErrorCount                         float64 `json:"errorCount,omitempty"`
+	RequestCount                       float64 `json:"requestCount,omitempty"`
+	CurrentConcurrentExecutionCount    float64 `json:"currentConcurrentExecutionCount,omitempty"`
+	RollingMaxConcurrentExecutionCount float64 `json:"rollingMaxConcurrentExecutionCount,omitempty"`
 
 	RollingCountBadRequests        float64 `json:"rollingCountBadRequests,omitempty"`
 	RollingCountCollapsedRequests  float64 `json:"rollingCountCollapsedRequests,omitempty"`
@@ -57,9 +59,6 @@ type Data struct {
 	RollingCountSuccess            float64 `json:"rollingCountSuccess,omitempty"`
 	RollingCountThreadPoolRejected float64 `json:"rollingCountThreadPoolRejected,omitempty"`
 	RollingCountTimeout            float64 `json:"rollingCountTimeout,omitempty"`
-
-	CurrentConcurrentExecutionCount    float64 `json:"currentConcurrentExecutionCount,omitempty"`
-	RollingMaxConcurrentExecutionCount float64 `json:"rollingMaxConcurrentExecutionCount,omitempty"`
 
 	LatencyExecuteMean float64   `json:"latencyExecute_mean,omitempty"`
 	LatencyTotalMean   float64   `json:"latencyTotal_mean,omitempty"`
