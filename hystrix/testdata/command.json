@@ -66,5 +66,5 @@ data: {
   "propertyValue_requestCacheEnabled":true,
   "propertyValue_requestLogEnabled":true,
   "reportingHosts":1,
-  "threadPool":"AB"
+  "threadPool":"Service"
 }

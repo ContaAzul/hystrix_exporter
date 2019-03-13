@@ -223,7 +223,7 @@ func ReportCommand(cluster string, data hystrix.Data) {
 	rollingCountFailure.WithLabelValues(cluster, name, group).Set(data.RollingCountFailure)
 	rollingCountExceptionsThrown.WithLabelValues(cluster, name, group).Set(data.RollingCountExceptionsThrown)
 
-	circuitOpen.WithLabelValues(cluster, name, group).Set(boolToFloat64(data.Open))
+	circuitOpen.WithLabelValues(cluster, name, group).Set(boolToFloat64(data.IsCircuitBreakerOpen))
 }
 
 // ReportThreadPool reports metrics of a thread pool
