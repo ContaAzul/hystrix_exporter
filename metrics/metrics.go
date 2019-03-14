@@ -10,8 +10,56 @@ import (
 
 var (
 	//
-	// command gauges:
+	// Command gauges:
 	//
+
+	// CircuitOpen prometheus gauge
+	commandCircuitOpen = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "hystrix_command_circuit_open",
+		Help: "circuit open, 1 means true",
+	}, []string{"cluster", "name", "group"})
+
+	// ErrorPercentage prometheus gauge
+	commandErrorPercentage = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "hystrix_command_error_percentage",
+		Help: "error percentage",
+	}, []string{"cluster", "name", "group"})
+
+	// ErrorCount prometheus gauge
+	commandErrors = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "hystrix_command_errors",
+		Help: "number of errors",
+	}, []string{"cluster", "name", "group"})
+
+	// RequestCount prometheus gauge
+	commandRequests = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "hystrix_command_requests",
+		Help: "number of requests",
+	}, []string{"cluster", "name", "group"})
+
+	// RollingEventCounts prometheus gauge
+	commandRollingEvents = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "hystrix_command_rolling_events",
+		Help: "rolling event counts",
+	}, []string{"cluster", "name", "group", "event"})
+
+	// commandConcurrentExecutions prometheus gauge
+	commandConcurrentExecutions = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "hystrix_command_concurrent_executions",
+		Help: "number of concurrent executions",
+	}, []string{"cluster", "name", "group"})
+
+	// MaxConcurrentExecutionCount prometheus gauge
+	commandMaxConcurrentExecutions = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "hystrix_command_max_concurrent_executions",
+		Help: "max number of concurrent executions",
+	}, []string{"cluster", "name", "group"})
+
+	// ReportingHosts prometheus gauge
+	commandReportingHosts = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "hystrix_command_reporting_hosts",
+		Help: "number of reporting hosts",
+	}, []string{"cluster", "name", "group"})
 
 	// LatencyTotal prometheus gauge
 	latencyTotal = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -25,62 +73,8 @@ var (
 		Help: "latencies execute",
 	}, []string{"cluster", "name", "group", "statistic"})
 
-	// RollingCountCollapsedRequests prometheus gauge
-	rollingCountCollapsedRequests = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "hystrix_command_rollingCountCollapsedRequests",
-		Help: "rollingCountCollapsedRequests",
-	}, []string{"cluster", "name", "group"})
-
-	// RollingCountShortCircuited prometheus gauge
-	rollingCountShortCircuited = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "hystrix_command_rollingCountShortCircuited",
-		Help: "rollingCountShortCircuited",
-	}, []string{"cluster", "name", "group"})
-
-	// RollingCountThreadPoolRejected prometheus gauge
-	rollingCountThreadPoolRejected = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "hystrix_command_rollingCountThreadPoolRejected",
-		Help: "rollingCountThreadPoolRejected",
-	}, []string{"cluster", "name", "group"})
-
-	// RollingCountFallbackEmit prometheus gauge
-	rollingCountFallbackEmit = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "hystrix_command_rollingCountFallbackEmit",
-		Help: "rollingCountFallbackEmit",
-	}, []string{"cluster", "name", "group"})
-
-	// RollingCountSuccess prometheus gauge
-	rollingCountSuccess = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "hystrix_command_rollingCountSuccess",
-		Help: "rollingCountSuccess",
-	}, []string{"cluster", "name", "group"})
-
-	// RollingCountTimeout prometheus gauge
-	rollingCountTimeout = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "hystrix_command_rollingCountTimeout",
-		Help: "rollingCountTimeout",
-	}, []string{"cluster", "name", "group"})
-
-	// RollingCountFailure prometheus gauge
-	rollingCountFailure = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "hystrix_command_rollingCountFailure",
-		Help: "rollingCountFailure",
-	}, []string{"cluster", "name", "group"})
-
-	// RollingCountExceptionsThrown prometheus gauge
-	rollingCountExceptionsThrown = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "hystrix_command_rollingCountExceptionsThrown",
-		Help: "rollingCountExceptionsThrown",
-	}, []string{"cluster", "name", "group"})
-
-	// CircuitOpen prometheus gauge
-	circuitOpen = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "hystrix_command_circuit_open",
-		Help: "circuit open, 1 means true",
-	}, []string{"cluster", "name", "group"})
-
 	//
-	// thread pool gauges:
+	// Threadpool gauges:
 	//
 
 	// ThreadPoolCurrentCorePoolSize prometheus gauge
@@ -159,17 +153,17 @@ var (
 // MustRegister registers all metrics against a prometheus registerer
 func MustRegister(registerer prometheus.Registerer) {
 	registerer.MustRegister(
+		commandCircuitOpen,
+		commandErrorPercentage,
+		commandErrors,
+		commandRequests,
+		commandRollingEvents,
+		commandConcurrentExecutions,
+		commandMaxConcurrentExecutions,
+		commandReportingHosts,
+
 		latencyTotal,
 		latencyExecute,
-		rollingCountCollapsedRequests,
-		rollingCountShortCircuited,
-		rollingCountThreadPoolRejected,
-		rollingCountFallbackEmit,
-		rollingCountSuccess,
-		rollingCountTimeout,
-		rollingCountFailure,
-		rollingCountExceptionsThrown,
-		circuitOpen,
 
 		threadPoolCurrentCorePoolSize,
 		threadPoolCurrentLargestPoolSize,
@@ -193,6 +187,31 @@ func ReportCommand(cluster string, data hystrix.Data) {
 	var name = strings.ToLower(data.Name)
 	var group = strings.ToLower(data.Group)
 
+	commandCircuitOpen.WithLabelValues(cluster, name, group).Set(boolToFloat64(data.IsCircuitBreakerOpen))
+	commandErrorPercentage.WithLabelValues(cluster, name, group).Set(data.ErrorPercentage)
+	commandErrors.WithLabelValues(cluster, name, group).Set(data.ErrorCount)
+	commandRequests.WithLabelValues(cluster, name, group).Set(data.RequestCount)
+	commandConcurrentExecutions.WithLabelValues(cluster, name, group).Set(data.CurrentConcurrentExecutionCount)
+	commandMaxConcurrentExecutions.WithLabelValues(cluster, name, group).Set(data.RollingMaxConcurrentExecutionCount)
+	commandReportingHosts.WithLabelValues(cluster, name, group).Set(data.ReportingHosts)
+
+	commandRollingEvents.WithLabelValues(cluster, name, group, "bad_request").Set(data.RollingCountBadRequests)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "collapsed").Set(data.RollingCountCollapsedRequests)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "emit").Set(data.RollingCountEmit)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "exception_thrown").Set(data.RollingCountExceptionsThrown)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "failure").Set(data.RollingCountFailure)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "fallback_emit").Set(data.RollingCountFallbackEmit)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "fallback_failure").Set(data.RollingCountFallbackFailure)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "fallback_missing").Set(data.RollingCountFallbackMissing)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "fallback_rejection").Set(data.RollingCountFallbackRejection)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "fallback_success").Set(data.RollingCountFallbackSuccess)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "response_from_cache").Set(data.RollingCountResponsesFromCache)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "semaphore_rejected").Set(data.RollingCountSemaphoreRejected)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "short_circuited").Set(data.RollingCountShortCircuited)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "success").Set(data.RollingCountSuccess)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "thread_pool_rejected").Set(data.RollingCountThreadPoolRejected)
+	commandRollingEvents.WithLabelValues(cluster, name, group, "timeout").Set(data.RollingCountTimeout)
+
 	latencyTotal.WithLabelValues(cluster, name, group, "0").Set(data.LatencyTotal.L0)
 	latencyTotal.WithLabelValues(cluster, name, group, "25").Set(data.LatencyTotal.L25)
 	latencyTotal.WithLabelValues(cluster, name, group, "50").Set(data.LatencyTotal.L50)
@@ -203,6 +222,7 @@ func ReportCommand(cluster string, data hystrix.Data) {
 	latencyTotal.WithLabelValues(cluster, name, group, "99.5").Set(data.LatencyTotal.L995)
 	latencyTotal.WithLabelValues(cluster, name, group, "100").Set(data.LatencyTotal.L100)
 	latencyTotal.WithLabelValues(cluster, name, group, "mean").Set(data.LatencyTotalMean)
+
 	latencyExecute.WithLabelValues(cluster, name, group, "0").Set(data.LatencyExecute.L0)
 	latencyExecute.WithLabelValues(cluster, name, group, "25").Set(data.LatencyExecute.L25)
 	latencyExecute.WithLabelValues(cluster, name, group, "50").Set(data.LatencyExecute.L50)
@@ -213,17 +233,6 @@ func ReportCommand(cluster string, data hystrix.Data) {
 	latencyExecute.WithLabelValues(cluster, name, group, "99.5").Set(data.LatencyExecute.L995)
 	latencyExecute.WithLabelValues(cluster, name, group, "100").Set(data.LatencyExecute.L100)
 	latencyExecute.WithLabelValues(cluster, name, group, "mean").Set(data.LatencyExecuteMean)
-
-	rollingCountCollapsedRequests.WithLabelValues(cluster, name, group).Set(data.RollingCountCollapsedRequests)
-	rollingCountShortCircuited.WithLabelValues(cluster, name, group).Set(data.RollingCountShortCircuited)
-	rollingCountThreadPoolRejected.WithLabelValues(cluster, name, group).Set(data.RollingCountThreadPoolRejected)
-	rollingCountFallbackEmit.WithLabelValues(cluster, name, group).Set(data.RollingCountFallbackEmit)
-	rollingCountSuccess.WithLabelValues(cluster, name, group).Set(data.RollingCountSuccess)
-	rollingCountTimeout.WithLabelValues(cluster, name, group).Set(data.RollingCountTimeout)
-	rollingCountFailure.WithLabelValues(cluster, name, group).Set(data.RollingCountFailure)
-	rollingCountExceptionsThrown.WithLabelValues(cluster, name, group).Set(data.RollingCountExceptionsThrown)
-
-	circuitOpen.WithLabelValues(cluster, name, group).Set(boolToFloat64(data.Open))
 }
 
 // ReportThreadPool reports metrics of a thread pool
