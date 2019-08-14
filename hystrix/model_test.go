@@ -9,7 +9,7 @@ import (
 )
 
 func TestUnmarshal(t *testing.T) {
-	for _, f := range []string{"command", "threadpool"} {
+	for _, f := range []string{"command", "threadpool", "ping"} {
 		t.Run(f, func(t *testing.T) {
 			var assert = assert.New(t)
 			bts, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", f))
